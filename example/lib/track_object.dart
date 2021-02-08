@@ -1,5 +1,5 @@
 abstract class HasCreation {
-  bool locInfo;
+  bool get locInfo;
 
   @override
   String toString() {

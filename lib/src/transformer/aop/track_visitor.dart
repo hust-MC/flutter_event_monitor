@@ -60,7 +60,6 @@ void _maybeAddCreationLocationArgument(
     Arguments arguments,
     FunctionNode function,
     Expression creationLocation,
-    Class locationClass,
     ) {
   if (_hasNamedArgument(arguments, _creationLocationParameterName)) {
     return;
@@ -194,8 +193,7 @@ class _WidgetTransformer extends Transformer {
     _maybeAddCreationLocationArgument(
       node.arguments,
       function,
-      _computeLocation(node, function, constructedClass),
-      _locationClass,
+      ConstantExpression(BoolConstant(_computeLocation(node, function, constructedClass))),
     );
   }
 
@@ -213,52 +211,18 @@ class _WidgetTransformer extends Transformer {
     return node;
   }
 
-  Expression _computeLocation(InvocationExpression node, FunctionNode function,
+  bool _computeLocation(InvocationExpression node, FunctionNode function,
       Class constructedClass) {
-    // For factory constructors we need to use the location specified as an
-    // argument to the factory constructor rather than the location
     if (_currentFactory != null &&
-        _tracker._isSubclassOf(
-            constructedClass, _currentFactory.enclosingClass)) {
-      final VariableDeclaration creationLocationParameter = _getNamedParameter(
-        _currentFactory.function,
-        _creationLocationParameterName,
-      );
+        _tracker._isSubclassOf(constructedClass, _currentFactory.enclosingClass)) {
+
+      final VariableDeclaration creationLocationParameter =
+      _getNamedParameter(_currentFactory.function, _creationLocationParameterName);
       if (creationLocationParameter != null) {
-        return new VariableGet(creationLocationParameter);
+        return false;
       }
     }
-
-    final Arguments arguments = node.arguments;
-    final Location location = node.location;
-    final List<ConstructorInvocation> parameterLocations =
-        <ConstructorInvocation>[];
-    final List<VariableDeclaration> parameters = function.positionalParameters;
-    for (int i = 0; i < arguments.positional.length; ++i) {
-      final Expression expression = arguments.positional[i];
-      final VariableDeclaration parameter = parameters[i];
-      parameterLocations.add(_constructLocation(
-        expression.location,
-        name: parameter.name,
-        showFile: false,
-      ));
-    }
-    for (NamedExpression expression in arguments.named) {
-      parameterLocations.add(_constructLocation(
-        expression.location,
-        name: expression.name,
-        showFile: false,
-      ));
-    }
-
-    return _constructLocation(
-      location,
-      parameterLocations: new ListLiteral(
-        parameterLocations,
-        typeArgument: new InterfaceType(_locationClass, _currentLibrary.nonNullable),
-        isConst: true,
-      ),
-    );
+    return !node.location.file.toString().contains('packages/flutter/');
   }
 
   void enterLibrary(Library library) {
@@ -392,16 +356,14 @@ class WidgetCreatorTracker {
             initializer.arguments,
             initializer.target.function,
             new VariableGet(variable),
-            _locationClass,
           );
           hasRedirectingInitializer = true;
           break;
         }
       }
       if (!hasRedirectingInitializer) {
-        constructor.initializers.add(new FieldInitializer(
-          locationField,
-          new VariableGet(variable),
+        constructor.initializers.add(FieldInitializer(
+          locationField, VariableGet(variable),
         ));
         // TODO(jacobr): add an assert verifying the locationField is not
         // null. Currently, we cannot safely add this assert because we do not
@@ -449,8 +411,8 @@ class WidgetCreatorTracker {
       return;
     }
 
-    final Set<Class> transformedClasses = new Set<Class>.identity();
-    final Set<Library> librariesToTransform = new Set<Library>.identity()
+    final Set<Class> transformedClasses = Set<Class>.identity();
+    final Set<Library> librariesToTransform = Set<Library>.identity()
       ..addAll(libraries);
 
     for (Library library in libraries) {
@@ -466,7 +428,7 @@ class WidgetCreatorTracker {
 
     // Transform call sites to pass the location parameter.
     final _WidgetTransformer callsiteTransformer =
-        new _WidgetTransformer(
+        _WidgetTransformer(
             widgetClass: _widgetClass,
             locationClass: _locationClass,
             tracker: this);
@@ -565,16 +527,14 @@ class WidgetCreatorTracker {
           _maybeAddCreationLocationArgument(
             initializer.arguments,
             initializer.target.function,
-            new VariableGet(variable),
-            _locationClass,
+            VariableGet(variable),
           );
         } else if (initializer is SuperInitializer &&
             _isSubclassOfWidget(initializer.target.enclosingClass)) {
           _maybeAddCreationLocationArgument(
             initializer.arguments,
             initializer.target.function,
-            new VariableGet(variable),
-            _locationClass,
+            VariableGet(variable),
           );
         }
       }

@@ -208,15 +208,14 @@ class InjectDemo{
   bool isLocalWidget(Object object) {
 
     final Object candidate =  object is Element ? object.widget : object;
-    LocInfo location = candidate is HasCreation ? candidate.locInfo : null;
+    bool location = candidate is HasCreation ? candidate.locInfo : false;
+    return location;
 
-
-
-    if (location == null || location.file == null) {
-      return false;
-    }
-    final String file = Uri.parse(location.file).path;
-
-    return !file.contains('packages/flutter/');
+    // if (location == null || location.file == null) {
+    //   return false;
+    // }
+    // final String file = Uri.parse(location.file).path;
+    //
+    // return !file.contains('packages/flutter/');
   }
 }
