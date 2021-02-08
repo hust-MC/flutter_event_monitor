@@ -11,11 +11,13 @@ dev_dependencies:
 
 dependency_overrides:
   kernel:
-    git:
-      url: git@github.com:alibaba-flutter/sdk.git
-      ref: stable/v1.20.4
-      path: pkg/kernel
-
+    path: /Users/emercy/Android/aop_flutter/sdk/pkg/kernel
+  vm:
+    path: /Users/emercy/Android/aop_flutter/sdk/pkg/vm
+  frontend_server:
+    path: /Users/emercy/Android/aop_flutter/sdk/pkg/frontend_server
+  front_end:
+    path: /Users/emercy/Android/aop_flutter/sdk/pkg/front_end
 
 # For information on the generic Dart part of this file, see the
 # following page: https://www.dartlang.org/tools/pub/pubspec

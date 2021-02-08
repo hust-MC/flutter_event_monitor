@@ -22,6 +22,8 @@ import 'package:vm/incremental_compiler.dart';
 import 'package:vm/target/flutter.dart';
 
 import '../transformer/aop/aop_transformer.dart';
+import '../transformer/aop/inspector_transformer.dart';
+
 
 /// Wrapper around [FrontendCompiler] that adds [widgetCreatorTracker] kernel
 /// transformation to the compilation.
@@ -29,6 +31,7 @@ class _FlutterFrontendCompiler implements frontend.CompilerInterface {
   final frontend.CompilerInterface _compiler;
 
   final AspectdAopTransformer aspectdAopTransformer = AspectdAopTransformer();
+  final InspectorTransformer inspectorTransformer = InspectorTransformer();
 
   _FlutterFrontendCompiler(StringSink output,
       {bool unsafePackageSerialization,
@@ -46,6 +49,11 @@ class _FlutterFrontendCompiler implements frontend.CompilerInterface {
       {IncrementalCompiler generator}) async {
     List<FlutterProgramTransformer> transformers =
         FlutterTarget.flutterProgramTransformers;
+
+    if (!transformers.contains(inspectorTransformer)) {
+      transformers.add(inspectorTransformer);
+    }
+
     if (!transformers.contains(aspectdAopTransformer)) {
       transformers.add(aspectdAopTransformer);
     }

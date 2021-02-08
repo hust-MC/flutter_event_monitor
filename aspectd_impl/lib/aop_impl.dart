@@ -1,4 +1,9 @@
 import 'package:aspectd/aspectd.dart';
+import 'package:flutter/gestures.dart';
+import 'package:flutter/widgets.dart';
+import 'package:example/user_widget.dart';
+import 'package:example/track_object.dart';
+
 
 // @Aspect()
 // @pragma("vm:entry-point")
@@ -106,5 +111,112 @@ class InjectDemo{
   @pragma("vm:entry-point")
   static void onInjectDemoHook3() {
     print('Aspectd:KWLM42');
+    print('Aspectd:MC_inject1');
+  }
+
+  @Inject("package:example/main.dart","C","-fc", lineNum:196)
+  @pragma("vm:entry-point")
+  static void onInjectDemoHookMC() {
+    print('Aspectd:MC_fc');
+  }
+
+  static var curPointerCode = 0;
+  static var prePointerCode = 0;
+  static var preHitPointer = 0;
+  static var clickRenderMap = new Map<int, Object>();
+
+  @Call("package:flutter/src/gestures/hit_test.dart", "HitTestTarget", "-handleEvent")
+  @pragma("vm:entry-point")
+  dynamic hookHitTestTargetHandleEvent(PointCut pointCut) {
+    dynamic target = pointCut.target;
+    PointerEvent pointerEvent = pointCut.positionalParams[0];
+    HitTestEntry entry = pointCut.positionalParams[1];
+    curPointerCode = pointerEvent.pointer;
+    if (target is RenderObject) {
+
+      if (curPointerCode > prePointerCode) {
+        clickRenderMap.clear();
+      }
+      if (!clickRenderMap.containsKey(curPointerCode)) {
+        clickRenderMap[curPointerCode] = target;
+      }
+    }
+    prePointerCode = curPointerCode;
+    target.handleEvent(pointerEvent, entry);
+  }
+
+  @Call("package:flutter/src/gestures/recognizer.dart", "GestureRecognizer", "-invokeCallback")
+  @pragma("vm:entry-point")
+  dynamic hookinvokeCallback(PointCut pointcut) {
+    print("callback ====start=====");
+
+    var result = pointcut.proceed();
+    if (curPointerCode > preHitPointer) {
+      String argumentName = pointcut.positionalParams[0];
+
+      if (argumentName == 'onTap' ||
+          argumentName == 'onTapDown' ||
+          argumentName == 'onDoubleTap') {
+        print("callback tap tap");
+
+        RenderObject clickRender = clickRenderMap[curPointerCode];
+        if (clickRender != null) {
+          DebugCreator creator = clickRender.debugCreator;
+          Element element = creator.element;
+
+          //通过element获取路径
+          String elementPath = getElementPath(element);
+          print(elementPath);
+        }
+        preHitPointer = curPointerCode;
+      }
+    }
+    print("callback ====end=====");
+
+    return result;
+  }
+
+  String getElementPath(Element element) {
+    var buffer = new StringBuffer();
+    var current = element;
+
+    element.visitAncestorElements((parent) {
+      // print("callback getPath : ${parent.widget.toStringShort()}");
+
+      var count = 0;
+      parent.visitChildElements((child) {
+        if (current == child) {
+          if (current is HasCreation) {
+            print('every is wrong');
+          }
+          if (current.widget is HasCreation && isLocalWidget(current)) {
+            print('current is user widget : ${current.widget}');
+            buffer.write(current.widget.toStringShort());
+            buffer.write("[$count]/");
+          }
+
+          current = parent;
+          return;
+        }
+        count++;
+      });
+
+      return true;
+    });
+    return buffer.toString();
+  }
+  bool isLocalWidget(Object object) {
+
+    final Object candidate =  object is Element ? object.widget : object;
+    LocInfo location = candidate is HasCreation ? candidate.locInfo : null;
+
+
+
+    if (location == null || location.file == null) {
+      return false;
+    }
+    final String file = Uri.parse(location.file).path;
+
+    return !file.contains('packages/flutter/');
   }
 }

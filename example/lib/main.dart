@@ -1,5 +1,8 @@
+import 'dart:io';
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'user_widget.dart';
+import 'track_object.dart';
 
 Future<void> appInit() async {}
 
@@ -36,6 +39,18 @@ void main() {
   injectDemo([]);
   C()..fa();
   runApp(MyApp());
+
+  test();
+}
+
+Future<void> test() async {
+//   Directory appDocDirectory = await getApplicationDocumentsDirectory();
+//
+//   new Directory(appDocDirectory.path+'/'+'dir').create(recursive: true)
+// // The created directory is returned as a Future.
+//       .then((Directory directory) {
+//     print('Path of New Dir: '+directory.path);
+//   });
 }
 
 class MyApp extends StatelessWidget {
@@ -113,6 +128,7 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
+  PointerEvent _event;
   @override
   Widget build(BuildContext context) {
     // This method is rerun every time setState is called, for instance as done
@@ -165,7 +181,19 @@ class _MyHomePageState extends State<MyHomePage> {
                 const Text('Random Demo', style: TextStyle(fontSize: 30)),
                 onTap: () {
                   onRandomDemo();
-                })
+                }),
+            Listener(
+              child: Container(
+                alignment: Alignment.center,
+                color: Colors.blue,
+                width: 300.0,
+                height: 150.0,
+                child: Text(_event?.toString()??"",style: TextStyle(color: Colors.white)),
+              ),
+              onPointerDown: (PointerDownEvent event) => setState(()=>_event=event),
+              onPointerMove: (PointerMoveEvent event) => setState(()=>_event=event),
+              onPointerUp: (PointerUpEvent event) => setState(()=>_event=event),
+            ),
           ],
         ),
       ),
@@ -195,6 +223,6 @@ class C with A,B {
 
   }
   void fc() {
-
+    print("fc self");
   }
 }
