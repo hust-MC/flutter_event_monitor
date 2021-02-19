@@ -70,11 +70,8 @@ class InspectorVisitor extends Transformer {
         .any((NamedExpression argument) => argument.name == argumentName);
   }
 
-  void _maybeAddCreationLocationArgument(
-      Arguments arguments,
-      FunctionNode function,
-      Expression creationLocation,
-      ) {
+  void _maybeAddCreationLocationArgument(Arguments arguments,
+      FunctionNode function, Expression creationLocation) {
     if (_hasNamedArgument(arguments, _creationLocationParameterName)) {
       return;
     }
@@ -84,7 +81,6 @@ class InspectorVisitor extends Transformer {
         return;
       }
     }
-
 
     final NamedExpression namedArgument = NamedExpression(_creationLocationParameterName, creationLocation);
     namedArgument.parent = arguments;

@@ -11,7 +11,7 @@ const String _creationLocationParameterName =
 /// Regardless of what library a class implementing Widget is defined in, the
 /// private field will always be defined in the context of the widget_inspector
 /// library ensuring no name conflicts with regular fields.
-const String _locationFieldName = r'locInfo';
+const String _locationFieldName = r'isUserCreate';
 
 bool _hasNamedParameter(FunctionNode function, String name) {
   return function.namedParameters
@@ -76,8 +76,7 @@ void _maybeAddCreationLocationArgument(
     }
   }
 
-  final NamedExpression namedArgument =
-  new NamedExpression(_creationLocationParameterName, creationLocation);
+  final NamedExpression namedArgument = NamedExpression(_creationLocationParameterName, creationLocation);
   namedArgument.parent = arguments;
   arguments.named.add(namedArgument);
 }
@@ -119,43 +118,6 @@ class _WidgetTransformer extends Transformer {
         _locationClass = locationClass,
         _tracker = tracker;
 
-  /// Builds a call to the const constructor of the [DebugLocation]
-  /// object specifying the location where a constructor call was made and
-  /// optionally the locations for all parameters passed in.
-  ///
-  /// Specifying the parameters passed in is an experimental feature. With
-  /// access to the source code of an application you could determine the
-  /// locations of the parameters passed in from the source location of the
-  /// constructor call but it is convenient to bundle the location and names
-  /// of the parameters passed in so that tools can show parameter locations
-  /// without re-parsing the source code.
-  ConstructorInvocation _constructLocation(
-    Location location, {
-    String name,
-    ListLiteral parameterLocations,
-    bool showFile: true,
-  }) {
-    final List<NamedExpression> arguments = <NamedExpression>[
-      new NamedExpression('line', new IntLiteral(location.line)),
-      new NamedExpression('column', new IntLiteral(location.column)),
-    ];
-    if (showFile) {
-      arguments.add(new NamedExpression(
-          'file', new StringLiteral(location.file.toString())));
-    }
-    if (name != null) {
-      arguments.add(new NamedExpression('name', new StringLiteral(name)));
-    }
-    if (parameterLocations != null) {
-      arguments
-          .add(new NamedExpression('parameterLocations', parameterLocations));
-    }
-    return new ConstructorInvocation(
-      _locationClass.constructors.first,
-      new Arguments(<Expression>[], named: arguments),
-      isConst: true,
-    );
-  }
 
   @override
   Procedure visitProcedure(Procedure node) {
@@ -268,10 +230,10 @@ class WidgetCreatorTracker {
             }
           }
         } else {
-          if (importUri.path == 'example/track_object.dart' ||
-              importUri.path == 'flutter_web/src/widgets/track_object.dart') {
+          if (importUri.path == 'example/user_widget.dart' ||
+              importUri.path == 'flutter_web/src/widgets/user_widget.dart') {
             for (Class class_ in library.classes) {
-              if (class_.name == 'HasCreation') {
+              if (class_.name == 'UserWidget') {
                 _hasCreationLocationClass = class_;
               } else if (class_.name == 'LocInfo') {
                 _locationClass = class_;
@@ -301,13 +263,13 @@ class WidgetCreatorTracker {
       return;
     }
     clazz.implementedTypes
-        .add(new Supertype(_hasCreationLocationClass, <DartType>[]));
+        .add(Supertype(_hasCreationLocationClass, <DartType>[]));
     // changedStructureNotifier?.registerClassHierarchyChange(clazz);
 
     // We intentionally use the library context of the _HasCreationLocation
     // class for the private field even if [clazz] is in a different library
     // so that all classes implementing Widget behave consistently.
-    final Name fieldName = new Name(
+    final Name fieldName = Name(
       _locationFieldName,
       _hasCreationLocationClass.enclosingLibrary,
     );
@@ -334,9 +296,9 @@ class WidgetCreatorTracker {
         constructor.function,
         _creationLocationParameterName,
       ));
-      final VariableDeclaration variable = new VariableDeclaration(
+      final VariableDeclaration variable = VariableDeclaration(
         _creationLocationParameterName,
-        type: new InterfaceType(
+        type: InterfaceType(
             _locationClass, clazz.enclosingLibrary.nonNullable),
       );
       if (!_maybeAddNamedParameter(constructor.function, variable)) {
@@ -355,7 +317,7 @@ class WidgetCreatorTracker {
           _maybeAddCreationLocationArgument(
             initializer.arguments,
             initializer.target.function,
-            new VariableGet(variable),
+            VariableGet(variable),
           );
           hasRedirectingInitializer = true;
           break;

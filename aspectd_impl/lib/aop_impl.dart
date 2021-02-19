@@ -186,10 +186,7 @@ class InjectDemo{
       var count = 0;
       parent.visitChildElements((child) {
         if (current == child) {
-          if (current is HasCreation) {
-            print('every is wrong');
-          }
-          if (current.widget is HasCreation && isLocalWidget(current)) {
+          if (isLocalWidget(current)) {
             print('current is user widget : ${current.widget}');
             buffer.write(current.widget.toStringShort());
             buffer.write("[$count]/");
@@ -206,16 +203,8 @@ class InjectDemo{
     return buffer.toString();
   }
   bool isLocalWidget(Object object) {
-
     final Object candidate =  object is Element ? object.widget : object;
-    bool location = candidate is HasCreation ? candidate.locInfo : false;
+    bool location = candidate is UserWidget ? candidate.isUserCreate : false;
     return location;
-
-    // if (location == null || location.file == null) {
-    //   return false;
-    // }
-    // final String file = Uri.parse(location.file).path;
-    //
-    // return !file.contains('packages/flutter/');
   }
 }
